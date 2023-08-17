@@ -25,6 +25,10 @@ cmake_main_content:
   .ascii "  main.cpp\n"
   .ascii ")"
 cmake_main_content_len = . - cmake_main_content
+success_message: .asciz "Project created successfully!\n"
+success_message_len = . - success_message
+fail_message: .asciz "Failed to create project!\n"
+fail_message_len = . - fail_message
 
 .equ MODE, 0644
 .equ O_CREAT, 0100
@@ -36,6 +40,7 @@ cmake_main_content_len = . - cmake_main_content
 .equ GETCWD, 79
 .equ MKDIR, 83
 .equ DIR_PERMS, 0755
+.equ STDOUT, 1
 
 .section .bss
 cwd: .space 256
@@ -163,6 +168,11 @@ _start:
   syscall
 
 .print_strings:
+  movq $WRITE, %rax
+  movq $STDOUT, %rdi
+  movq $success_message, %rsi
+  movq $success_message_len, %rdx
+  syscall
 
 .exit:
   movq $60, %rax
