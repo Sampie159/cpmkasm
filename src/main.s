@@ -1,13 +1,8 @@
 .section .data
 proj_name: .asciz "/teste"
-proj_dir: .space 256
 proj_src: .asciz "/src"
-proj_src_dir: .space 256
 proj_cmake: .asciz "/CMakeLists.txt"
-proj_cmake_dir: .space 256
-proj_cmake_src_dir: .space 256
 proj_main_file: .asciz "/main.cpp"
-proj_main_file_dir: .space 256
 cmake_content:
   .ascii "cmake_minimum_required(VERSION 3.10)\n\n"
   .ascii "project(teste)\n\n"
@@ -35,17 +30,28 @@ cmake_main_content_len = . - cmake_main_content
 .equ O_CREAT, 0100
 .equ O_WRONLY, 0001
 .equ O_TRUNC, 01000
+.equ WRITE, 1
+.equ OPEN, 2
+.equ CLOSE, 3
+.equ GETCWD, 79
+.equ MKDIR, 83
+.equ DIR_PERMS, 0755
 
 .section .bss
 cwd: .space 256
 fd: .int 0
+proj_dir: .space 256
+proj_src_dir: .space 256
+proj_cmake_dir: .space 256
+proj_cmake_src_dir: .space 256
+proj_main_file_dir: .space 256
 
 .section .text
 .globl _start
 
 _start:
 .get_cwd:
-  movq $79, %rax
+  movq $GETCWD, %rax
   movq $cwd, %rdi
   movq $256, %rsi
   syscall
@@ -69,14 +75,14 @@ _start:
   call append_string
 
 .make_dirs:
-  movq $83, %rax
+  movq $MKDIR, %rax
   movq $proj_dir, %rdi
-  movq $0777, %rsi
+  movq $DIR_PERMS, %rsi
   syscall
 
-  movq $83, %rax
+  movq $MKDIR, %rax
   movq $proj_src_dir, %rdi
-  movq $0777, %rsi
+  movq $DIR_PERMS, %rsi
   syscall
 
 .make_file_paths:
@@ -105,63 +111,58 @@ _start:
   call append_string
 
 .write_files:
-  movq $2, %rax
+  movq $OPEN, %rax
   movq $proj_cmake_dir, %rdi
   movq $O_CREAT | O_WRONLY | O_TRUNC, %rsi
   movq $MODE, %rdx
   syscall
   movq %rax, fd
 
-  movq $1, %rax
+  movq $WRITE, %rax
   movq fd, %rdi
   movq $cmake_content, %rsi
   movq $cmake_content_len, %rdx
   syscall
 
-  movq $3, %rax
+  movq $CLOSE, %rax
   movq $fd, %rdi
   syscall
 
-  movq $2, %rax
+  movq $OPEN, %rax
   movq $proj_main_file_dir, %rdi
   movq $O_CREAT | O_WRONLY | O_TRUNC, %rsi
   movq $MODE, %rdx
   syscall
   movq %rax, fd
 
-  movq $1, %rax
+  movq $WRITE, %rax
   movq fd, %rdi
   movq $main_content, %rsi
   movq $main_content_len, %rdx
   syscall
 
-  movq $3, %rax
+  movq $CLOSE, %rax
   movq fd, %rdi
   syscall
 
-  movq $2, %rax
+  movq $OPEN, %rax
   movq $proj_cmake_src_dir, %rdi
   movq $O_CREAT | O_WRONLY | O_TRUNC, %rsi
   movq $MODE, %rdx
   syscall
   movq %rax, fd
 
-  movq $1, %rax
+  movq $WRITE, %rax
   movq fd, %rdi
   movq $cmake_main_content, %rsi
   movq $cmake_main_content_len, %rdx
   syscall
 
-  movq $3, %rax
+  movq $CLOSE, %rax
   movq fd, %rdi
   syscall
 
 .print_strings:
-  movq $1, %rax
-  movq $1, %rdi
-  movq $cmake_content, %rsi
-  movq $cmake_content_len, %rdx
-  syscall
 
 .exit:
   movq $60, %rax
